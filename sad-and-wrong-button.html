@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAD AND WRONG Button</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Arial Black', sans-serif;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-800 via-gray-700 to-gray-600">
+    <div class="text-center">
+        <div class="mb-12">
+            <h1 class="text-white text-6xl font-black mb-2 drop-shadow-2xl tracking-tight">
+                SAD AND WRONG
+            </h1>
+            <p class="text-gray-300 text-xl">Button</p>
+        </div>
+        
+        <!-- Easy Button Style -->
+        <div class="relative inline-block">
+            <!-- Button base/shadow -->
+            <div class="absolute inset-0 top-4 bg-gray-900 rounded-full blur-xl opacity-60"></div>
+            
+            <!-- The button -->
+            <button
+                id="mainButton"
+                class="relative w-80 h-80 rounded-full transition-all duration-100 focus:outline-none cursor-pointer"
+                style="
+                    background: radial-gradient(circle at 30% 30%, #ff1744, #c41e3a, #8b0000);
+                    box-shadow: 0 8px 0 #8b0000, 0 12px 30px rgba(0,0,0,0.6), inset 0 -4px 8px rgba(0,0,0,0.3), inset 0 4px 12px rgba(255,255,255,0.2);
+                "
+            >
+                <!-- Top highlight -->
+                <div 
+                    class="absolute inset-0 rounded-full opacity-40"
+                    style="background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.6), transparent 50%);"
+                ></div>
+                
+                <!-- Center label area -->
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="bg-white/90 rounded-full w-48 h-48 flex items-center justify-center transition-transform duration-100"
+                        id="labelArea"
+                        style="box-shadow: inset 0 2px 8px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1);">
+                        <span class="text-red-700 font-black text-2xl text-center leading-tight px-4" id="buttonText">
+                            PRESS<br>ME
+                        </span>
+                    </div>
+                </div>
+            </button>
+            
+            <!-- Base platform -->
+            <div id="basePlatform" class="absolute left-1/2 -translate-x-1/2 w-72 h-8 bg-gray-800 rounded-full transition-all duration-100 top-[305px]"
+                style="box-shadow: 0 4px 20px rgba(0,0,0,0.8);">
+            </div>
+        </div>
+        
+        <div class="mt-20 text-white text-2xl font-bold">
+            <div id="playingText" class="hidden animate-pulse text-red-400">
+                🔊 SAD AND WRONG! 🔊
+            </div>
+        </div>
+        
+        <p class="mt-8 text-gray-400 text-sm max-w-md mx-auto">
+            Click the button to hear an angry voice yell "SAD AND WRONG!"
+            <br>Make sure your volume is up!
+        </p>
+    </div>
+
+    <script>
+        const button = document.getElementById('mainButton');
+        const buttonText = document.getElementById('buttonText');
+        const playingText = document.getElementById('playingText');
+        const labelArea = document.getElementById('labelArea');
+        const basePlatform = document.getElementById('basePlatform');
+        
+        let isPlaying = false;
+        let audioElement = null;
+
+        // Pre-generate the audio on page load
+        async function generateAudio() {
+            try {
+                const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/pNInz6obpgDQGcFmaJgB', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: "SAD! AND WRONG!",
+                        model_id: "eleven_monolingual_v1",
+                        voice_settings: {
+                            stability: 0.3,
+                            similarity_boost: 0.8,
+                            style: 0.8,
+                            use_speaker_boost: true
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    const audioBlob = await response.blob();
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    audioElement = new Audio(audioUrl);
+                    console.log('Audio generated successfully');
+                } else {
+                    console.log('ElevenLabs API not available, using fallback');
+                    useFallbackAudio();
+                }
+            } catch (error) {
+                console.log('Using fallback audio');
+                useFallbackAudio();
+            }
+        }
+
+        function useFallbackAudio() {
+            // Fallback: Use Web Speech API with better settings
+            audioElement = {
+                play: function() {
+                    const utterance = new SpeechSynthesisUtterance("SAD! AND WRONG!");
+                    const voices = window.speechSynthesis.getVoices();
+                    const voice = voices.find(v => v.lang.startsWith('en') && !v.name.includes('Female')) || voices[0];
+                    if (voice) utterance.voice = voice;
+                    utterance.pitch = 0.7;
+                    utterance.rate = 1.4;
+                    utterance.volume = 1.0;
+                    
+                    utterance.onend = () => {
+                        resetButton();
+                    };
+                    
+                    window.speechSynthesis.cancel();
+                    window.speechSynthesis.speak(utterance);
+                    return Promise.resolve();
+                }
+            };
+        }
+
+        function pressButton() {
+            button.style.transform = 'translateY(12px)';
+            button.style.background = 'radial-gradient(circle at 30% 30%, #c41e3a, #8b0000, #5c0000)';
+            button.style.boxShadow = 'inset 0 8px 20px rgba(0,0,0,0.6), 0 2px 10px rgba(0,0,0,0.5)';
+            labelArea.style.transform = 'scale(0.95)';
+            basePlatform.style.top = '310px';
+        }
+
+        function releaseButton() {
+            button.style.transform = 'translateY(0)';
+            button.style.background = 'radial-gradient(circle at 30% 30%, #ff1744, #c41e3a, #8b0000)';
+            button.style.boxShadow = '0 8px 0 #8b0000, 0 12px 30px rgba(0,0,0,0.6), inset 0 -4px 8px rgba(0,0,0,0.3), inset 0 4px 12px rgba(255,255,255,0.2)';
+            labelArea.style.transform = 'scale(1)';
+            basePlatform.style.top = '305px';
+        }
+
+        function resetButton() {
+            isPlaying = false;
+            buttonText.innerHTML = 'PRESS<br>ME';
+            buttonText.classList.remove('animate-pulse');
+            playingText.classList.add('hidden');
+            button.disabled = false;
+            button.classList.remove('cursor-not-allowed');
+            button.classList.add('cursor-pointer');
+            setTimeout(releaseButton, 150);
+        }
+
+        button.addEventListener('click', async () => {
+            if (isPlaying) return;
+            
+            isPlaying = true;
+            button.disabled = true;
+            button.classList.remove('cursor-pointer');
+            button.classList.add('cursor-not-allowed');
+            
+            pressButton();
+            
+            buttonText.innerHTML = 'PLAYING...';
+            buttonText.classList.add('animate-pulse');
+            playingText.classList.remove('hidden');
+            
+            try {
+                await audioElement.play();
+                if (audioElement.addEventListener) {
+                    audioElement.addEventListener('ended', resetButton);
+                } else {
+                    // Fallback already handles onend
+                }
+            } catch (error) {
+                console.error('Error playing audio:', error);
+                resetButton();
+            }
+        });
+
+        // Generate audio when page loads
+        window.addEventListener('load', () => {
+            // Load voices for fallback
+            window.speechSynthesis.getVoices();
+            generateAudio();
+        });
+    </script>
+</body>
+</html>
